@@ -1,6 +1,3 @@
-from asyncio.windows_events import NULL
-from contextlib import nullcontext
-from turtle import position
 import talib
 import numpy as np
 import json
