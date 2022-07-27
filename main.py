@@ -49,6 +49,7 @@ def sell(symbol,position_price,close):
         data["winning_trades"]+=1
     data["open_trades"]-=1
     data["closed_trades"]+=1
+    data["profit"]=float(data["profit"])*float(close)/position_price
     f.seek(0)
     json.dump(data,f)
     f.close()
@@ -121,8 +122,5 @@ def check():
     print(time.time()-start, "seconds")
 
 while True:
-    #if(datetime.datetime.now().minute in [0,15,30,45]):
     check()
-    #else:
     print("No new candle")
-    #time.sleep(50)
