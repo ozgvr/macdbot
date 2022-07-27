@@ -12,6 +12,7 @@ stop_loss_perc = 2
 profit_perc = 2
 status = "OPEN"
 blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI"]
+whitelist = ["AVAX","MATIX","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
 
 def klines(symbol):
     candles = [float(x[4]) for x in client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1MINUTE, limit=200)]
@@ -37,9 +38,20 @@ def perc_change(a,b):
 def sell(symbol,position_price,close):
     status = "OPEN"
     print("SELL {}".format(symbol))
-    trades_file = open("trades.txt", "a")
-    trades_file.write("SELL,{},{},{}\n".format(symbol,position_price,close))
-    trades_file.close()
+    f = open("data.json","r+")
+    data = json.loads(f.read())
+    data["trades"][0].update({
+            "position_sell_price":float(close),
+            "position_type":"close",
+            "sell_timestamp":str(datetime.datetime.now())
+        }) 
+    if(float(close)>position_price):
+        data["winning_trades"]+=1
+    data["open_trades"]-=1
+    data["closed_trades"]+=1
+    f.seek(0)
+    json.dump(data,f)
+    f.close()
 
 def monitor(symbol,position_price,ema):
     if abs(perc_change(ema,position_price))>stop_loss_perc:
@@ -65,13 +77,22 @@ def monitor(symbol,position_price,ema):
 def buy(symbol,price,ema):
     print("BUY {}".format(symbol))
     status = "CLOSE"
-    account_file = open("account.txt", "r")
-    account = account_file.read()
-    account_file.close
 
-    trades_file = open("trades.txt", "a")
-    trades_file.write("BUY,{},{},{}\n".format(symbol,price,ema))
-    trades_file.close()
+    f = open("data.json","r+")
+    data = json.loads(f.read())
+    new_data = {}
+    new_data.update({
+            "ticker":str(symbol),
+            "position_buy_price":float(price),
+            "position_type":"open",
+            "buy_timestamp":str(datetime.datetime.now())
+        }) 
+    data["trades"].insert(0,new_data)
+    data["open_trades"]+=1
+    f.seek(0)
+    json.dump(data,f)
+    f.close()
+
     monitor(symbol,price,ema)
 
 def list_tickers():
