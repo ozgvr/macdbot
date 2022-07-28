@@ -3,6 +3,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Barlow">
+    <style>
+        body{font-family: Barlow, sans-serif;}
+    </style>
 </head>
 <body class="bg-dark" onload="updateTrades()">
     <section class="bg-dark">
@@ -17,22 +21,30 @@
     <section class="bg-dark">
         <div class="container py-4">
             <div class="row">
-                <div class="col">
+                <div class="col-6 col-md-3 mb-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-2 p-lg-5 h-100 w-100">
                         <h2>Trades Closed</h1>
-                        <h1 id="total-closed" class="display-6 mb-0 mt-auto">0</h1>
+                        <h1 id="total-closed" class="display-6 ">0</h1>
                     </div>
                 </div>
-                <div class="col p-0">
+                <div class="col-6 col-md-3 mb-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-2 p-lg-5 h-100 w-100">
                         <h2>Win Rate</h1>
-                        <h1 id="winrate" class="display-6 mb-0 mt-auto">0.00%</h1>
+                        <h1 id="winrate" class="display-6 ">0.00%</h1>
                     </div>
                 </div>
-                <div class="col">
+                <div class="col-6 col-md-3 mb-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-2 p-lg-5 h-100 w-100">
                         <h2>Profit</h1>
-                        <h1 id="profitrate" class="display-6 mb-0 mt-auto">0.00%</h1>
+                        <h1 id="profitrate" class="display-6 ">0.00%</h1>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="card bg-dark border-secondary bg-gradient text-white p-2 p-lg-5 h-100 w-100">
+                        <h2>Account</h1>
+                        <h1 id="account-total" class="d-flex display-6 ">0</h1>
+                        <span id="account-profit" class="lead">0</span>
+                        
                     </div>
                 </div>
     
@@ -51,8 +63,8 @@
                 <table class="table table-dark">
                     <thead class="thead-light">
                         <tr>
-                            <th>Time</th>
-                            <th>Position</th>
+                            <th class="d-none d-md-table-cell">Time</th>
+                            <th class="d-none d-md-table-cell">Position</th>
                             <th>Symbol</th>
                             <th>Buy Price</th>
                             <th>Sell Price</th>
@@ -92,16 +104,22 @@
                 var winrate = document.getElementById("winrate");
                 var profitrate = document.getElementById("profitrate");
                 var rate = (data.winning_trades/data.closed_trades)*100;
+                var account_total = document.getElementById("account-total");
+                var account_profit = document.getElementById("account-profit");
                 profitrate.innerHTML = ((data.profit-1)*100).toFixed(2) + "%";
-                rate = isNaN(rate)?0:rate;
-                winrate.innerHTML = rate.toFixed(2) + "%";
+                profitrate.style.color = (data.profit<1)?"red":"green"
+                rate = isNaN(rate)?0:rate.toFixed(2);
+                winrate.innerHTML = rate + "%";
                 total_closed.innerHTML = data.closed_trades;
+                var a_profit = (data.account*((((data.profit-1)*100).toFixed(2))/100)).toFixed(0);
+                account_total.innerText = (parseFloat(data.account)+parseFloat(a_profit));
+                account_total.innerText = account_total.innerText + "TL";
+                account_profit.innerText = a_profit + "TL";
+                account_profit.style.color = (a_profit<0)?"red":"green"
+                account_profit.innerText = (a_profit<0) ?"-" + account_profit.innerText : "+" + account_profit.innerText;
                 table.innerHTML = "";
                 data.trades.forEach(element => {
-                    // Find a <table> element with id="myTable":
-                    // Create an empty <tr> element and add it to the 1st position of the table:
                     var row = table.insertRow(-1);
-                    // Insert new cells (<td> elements) at the 1st and 2nd position of the "new" <tr> element:
                     var cell0 = row.insertCell(0);
                     var cell1 = row.insertCell(1);
                     var cell2 = row.insertCell(2);
@@ -111,6 +129,10 @@
                     var pnl = (((element.position_sell_price-element.position_buy_price)/(element.position_buy_price))*100).toFixed(2)
                     var timestamp = element.position_type=="open"?element.buy_timestamp:element.sell_timestamp;
                     cell0.innerHTML = timestamp.substring(0,19)
+                    cell0.classList.add('d-none');
+                    cell0.classList.add('d-md-table-cell');
+                    cell1.classList.add('d-none');
+                    cell1.classList.add('d-md-table-cell');
                     cell1.innerText = element.position_type;
                     cell2.innerHTML = element.ticker;
                     cell3.innerHTML = element.position_buy_price;
