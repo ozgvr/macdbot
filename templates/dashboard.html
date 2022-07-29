@@ -12,8 +12,8 @@
     </style>
 </head>
 <body class="bg-dark" onload="updateTrades()">
-    <section class="bg-dark">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Eighth navbar example">
+    <section class="bg-dark sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark pb-1 border-bottom border-secondary" aria-label="Eighth navbar example">
             <div class="container">
               <a class="navbar-brand" href="#">Trading Bot</a>
               <button type="button" onclick="updateTrades()" class="btn btn-primary">Update</button>
@@ -22,30 +22,30 @@
         
     </section>
     <section class="bg-dark">
-        <div class="container py-4">
+        <div class="container py-3">
             <div class="row">
-                <div class="col-6 col-md-3 mb-3">
+                <div class="col col-xs-6 col-md-3 mb-3 pe-2 pe-md-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-3 p-lg-4 p-xl-5 h-100 w-100">
                         <h2>Trades Closed</h1>
                         <h1 id="total-closed" class="display-6 ">0</h1>
                     </div>
                 </div>
-                <div class="col-6 col-md-3 mb-3">
+                <div class="col col-xs-6 col-md-3 mb-3 ps-2 ps-md-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-3 p-lg-4 p-xl-5 h-100 w-100">
                         <h2>Win Rate</h1>
                         <h1 id="winrate" class="display-6 ">0.00%</h1>
                     </div>
                 </div>
-                <div class="col-6 col-md-3 mb-3">
+                <div class="col col-xs-6 col-md-3 mb-3 pe-2 pe-md-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-3 p-lg-4 p-xl-5 h-100 w-100">
                         <h2>Profit</h1>
                         <h1 id="profitrate" class="display-6 ">0.00%</h1>
                     </div>
                 </div>
-                <div class="col-6 col-md-3 mb-3">
+                <div class="col col-xs-6 col-md-3 mb-3 ps-2 ps-md-3">
                     <div class="card bg-dark border-secondary bg-gradient text-white p-3 p-lg-4 p-xl-5 h-100 w-100">
                         <h2>Account</h1>
-                        <h1 id="account-total" class="d-flex display-6 ">0</h1>
+                        <h1 id="account-total" class="d-flex display-6 mb-0">0</h1>
                         <span id="account-profit" class="lead">0</span>
                         
                     </div>
@@ -56,7 +56,7 @@
         </div>
     </section>
     <section class="bg-dark">
-        <div class="container py-3">
+        <div class="container py-1">
             <div class="row">
                 <div class="col text-white">
                     <h1>Trades</h1>
