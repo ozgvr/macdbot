@@ -137,7 +137,7 @@
                     cell1.classList.add('d-none');
                     cell1.classList.add('d-md-table-cell');
                     cell1.innerText = element.position_type;
-                    cell2.innerHTML = element.ticker;
+                    cell2.innerHTML = element.ticker.slice(0,-4);
                     cell3.innerHTML = element.position_buy_price;
                     cell4.innerHTML = element.position_sell_price==undefined ? "":element.position_sell_price;
                     cell5.innerHTML = cell4.innerHTML=="" ? "" : pnl;
