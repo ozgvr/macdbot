@@ -1,18 +1,72 @@
+import config
+import telegram
+
 import talib
 import numpy as np
+
 import json
 import time
 import datetime
 import requests
+
 from binance.client import Client
 from binance.enums import * 
 
-client = Client("93h8mDuFiAniGatOB7Q7NpHZ90VyJDVDJ4L5Pbd6wmsnORobvHPLwVk9qtzDeoaG", "CLrXoE9jQDzfcqAAc3RkvIUP1WTrOKQJupAU1VSyx4261GlaUy3Pv9BrYFUoaYKJ", tld='com')
+client = Client(config.API_KEY, config.API_SECRET, tld='com')
+
 stop_loss_perc = 2
 profit_perc = 2
 status = "OPEN"
-blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI"]
-whitelist = ["AVAX","MATIX","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
+blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC"]
+whitelist = ["AVAX","MATIC","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
+
+def perc_change(a,b):
+    return ((a-b)/b)*100
+
+def get_sell_quantity(sq,symbol):
+    stepsizes = []
+    for f in client.get_symbol_info(symbol)["filters"]:
+        if (f["filterType"]=="LOT_SIZE" or f["filterType"]=="MARKET_LOT_SIZE"):
+            stepsizes.append(f["stepSize"])
+    print(stepsizes)
+    return convert_precision(sq,get_precision(float(max(stepsizes))))
+    
+def get_precision(step):
+    precision = 0
+    if(step==0):
+        return 200
+    while(step!=1.0):
+        step = step * 10
+        precision = precision + 1
+    return precision
+    
+def convert_precision(value, precision):
+    if(precision==200):
+        return value
+    dot = ""
+    whole,decimal = str(value).split('.')
+    if(precision==0):
+        return int(whole)
+    else:
+        dot = "."
+        return str(whole)+str(dot)+str(decimal)[:precision]
+
+def buy_order(symbol):
+    buy_quantity = client.get_asset_balance("USDT")['free']
+    try:
+        return client.create_order(symbol=symbol, side="BUY", type=ORDER_TYPE_MARKET, quoteOrderQty=buy_quantity)
+    except Exception as e:
+        return e
+
+def sell_order(symbol):
+
+    sell_quantity = client.get_asset_balance(symbol[:-4])['free']
+    sell_quantity = get_sell_quantity(sell_quantity,symbol)
+    print(sell_quantity)
+    try:
+        return client.create_order(symbol=symbol, side="SELL", type=ORDER_TYPE_MARKET, quantity=sell_quantity)
+    except Exception as e:
+        return e
 
 def klines(symbol):
     candles = [float(x[4]) for x in client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=200)]
@@ -32,8 +86,6 @@ def technicals(symbol):
     else:
         return None
 
-def perc_change(a,b):
-    return ((a-b)/b)*100
 
 def sell(symbol,position_price,close):
     status = "OPEN"
@@ -49,7 +101,8 @@ def sell(symbol,position_price,close):
         data["winning_trades"]+=1
     data["open_trades"]-=1
     data["closed_trades"]+=1
-    data["profit"]=float(data["profit"])*float(close)/position_price
+    data["profit"]=float(data["profit"])*((float(close)/position_price)-0.075)
+    telegram.send_alert(data)
     f.seek(0)
     json.dump(data,f)
     f.close()
@@ -66,9 +119,7 @@ def monitor(symbol,position_price,ema):
     
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"]) 
-        print(close,type(close))
-        print(stop,type(stop))
-        print(profit,type(profit))
+        print("{}|{}|{}".format(stop,close,profit))
         if close>=profit or close<=stop:
             sell(symbol,position_price,close)
             return
@@ -90,6 +141,7 @@ def buy(symbol,price,ema):
         }) 
     data["trades"].insert(0,new_data)
     data["open_trades"]+=1
+    telegram.send_alert(data)
     f.seek(0)
     json.dump(data,f)
     f.close()

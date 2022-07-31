@@ -12,8 +12,6 @@ def data():
     f = open("data.json","r").read()
     data = json.loads(f)
     return data
-    #return "<p>Hello, World!</p>"
 
-
-if __name__ =='__main__':  
+if __name__ =='__main__':
     app.run(host="localhost", port="80",debug = True)
