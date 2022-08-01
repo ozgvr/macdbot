@@ -88,6 +88,7 @@ def technicals(symbol):
 
 
 def sell(symbol,position_price,close):
+    sell_order(symbol=symbol)
     status = "OPEN"
     print("SELL {}".format(symbol))
     f = open("data.json","r+")
@@ -127,6 +128,7 @@ def monitor(symbol,position_price,ema):
             time.sleep(30)
 
 def buy(symbol,price,ema):
+    buy_order(symbol=symbol)
     print("BUY {}".format(symbol))
     status = "CLOSE"
 
