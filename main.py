@@ -101,7 +101,7 @@ def sell(symbol,position_price,close):
         data["winning_trades"]+=1
     data["open_trades"]-=1
     data["closed_trades"]+=1
-    data["profit"]=float(data["profit"])*((float(close)/position_price)-0.075)
+    data["profit"]=float(data["profit"])*((float(close)/position_price)-0.00075)
     telegram.send_alert(data)
     f.seek(0)
     json.dump(data,f)
