@@ -1,4 +1,6 @@
 import json
+from os import scandir
+import threading
 import time
 import datetime
 
@@ -17,6 +19,7 @@ client = Client(config.API_KEY, config.API_SECRET, tld='com')
 stop_loss_perc = 2
 profit_perc = 2
 status = "OPEN"
+scanning = False
 blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC"]
 whitelist = ["AVAX","MATIC","AR","CRV",
             "CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
@@ -66,7 +69,6 @@ def sell_order(symbol):
 
     sell_quantity = client.get_asset_balance(symbol[:-4])['free']
     sell_quantity = get_sell_quantity(sell_quantity,symbol)
-    print(sell_quantity)
     try:
         return client.create_order(symbol=symbol, side="SELL", type=ORDER_TYPE_MARKET, quantity=sell_quantity)
     except Exception as e:
@@ -92,9 +94,9 @@ def technicals(symbol):
 
 
 def sell(symbol,buy_price):
-    sell_price = avg_price(sell_order(symbol=symbol))
+    sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
     status = "OPEN"
-    print("SELL {symbol}")
+    print(f"SELL {symbol}")
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     data["trades"][0].update({
@@ -131,8 +133,8 @@ def monitor(symbol,buy_price,ema):
         else:
             time.sleep(30)
 
-def buy(symbol,ema):
-    price = avg_price(buy_order(symbol=symbol))
+def buy(symbol,close,ema):
+    price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
     print(f"BUY {symbol}")
     status = "CLOSE"
     trades_file = open("data.json","r+")
@@ -171,17 +173,19 @@ def list_tickers():
 def condition(technicals):
     symbol, price, ema, macd, signal, hist, previous_hist = technicals
     if price>ema and macd<0 and hist>0 and previous_hist<0 and status=="OPEN":
-        return buy(symbol,ema)
-    return False
+        buy(symbol,price,ema)
 
-def check():
-    print("-- Checking signals...")
-    start = time.time()
+def scan():
+    scanning = True
+    print("-- Checking signals --")
     for ticker in list_tickers():
-        technical = technicals(ticker)
-        condition(technical)
-    print(time.time()-start, "seconds")
+        condition(technicals(ticker))
+    print("-- No signal --")
+    scanning = False
 
-while True:
-    check()
-    print("-- No new signal")
+if __name__ == "__main__":
+    while True:
+        if not scanning and datetime.datetime.now().minute in [14,29,59]:
+            x = threading.Thread(target=scan, daemon=True)
+            x.start()
+        time.sleep(25)
