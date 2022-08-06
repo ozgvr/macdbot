@@ -152,8 +152,8 @@
                 total_closed.innerHTML = data.closed_trades;
                 var a_profit = (data.account*((((data.profit-1)*100).toFixed(2))/100)).toFixed(0);
                 account_total.innerText = (parseFloat(data.account)+parseFloat(a_profit));
-                account_total.innerText = account_total.innerText + "TL";
-                account_profit.innerText = a_profit + "TL";
+                account_total.innerText = account_total.innerText + "$";
+                account_profit.innerText = a_profit + "$";
                 account_profit.style.color = (a_profit<0)?"red":"green"
                 account_profit.innerText = (a_profit<0) ?"-" + account_profit.innerText : "+" + account_profit.innerText;
                 table.innerHTML = "";
