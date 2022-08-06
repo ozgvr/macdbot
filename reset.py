@@ -1,3 +1,5 @@
+import json
+
 def reset(account):
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
