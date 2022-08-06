@@ -21,8 +21,7 @@ profit_perc = 2
 status = "OPEN"
 scanning = False
 blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC"]
-whitelist = ["AVAX","MATIC","AR","CRV",
-            "CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
+whitelist = ["AVAX","MATIC","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
 
 def avg_price(data):
     return sum([float(fill["price"])*float(fill["qty"]) for fill in data["fills"]])/sum([float(fill["qty"]) for fill in data["fills"]])
@@ -87,8 +86,9 @@ def technicals(symbol):
         close = np.array(candles)
         macd, macdsignal, macdhist = talib.MACDEXT(close, fastperiod=12, fastmatype=talib.MA_Type.EMA, slowperiod=26, slowmatype=talib.MA_Type.EMA, signalperiod=9, signalmatype=talib.MA_Type.EMA)
         ema = talib.EMA(close, timeperiod=200)
+        ema3 = talib.EMA(close, timeperiod=200)<talib.EMA(close, timeperiod=100) and talib.EMA(close, timeperiod=50)>talib.EMA(close, timeperiod=100)
 
-        return [symbol,float(close[-1]),float(ema[-1]),float(macd[-1]),float(macdsignal[-1]),float(macdhist[-1]),float(macdhist[-2])]
+        return [symbol,float(close[-1]),float(ema[-1]),float(macd[-1]),float(macdsignal[-1]),float(macdhist[-1]),float(macdhist[-2]), ema3]
     else:
         return None
 
@@ -108,7 +108,7 @@ def sell(symbol,buy_price):
         data["winning_trades"]+=1
     data["open_trades"]-=1
     data["closed_trades"]+=1
-    data["profit"]=float(data["profit"])*((float(sell_price)/buy_price)-0.00075)
+    data["profit"]=float(data["profit"])*((float(sell_price)*0.99925/buy_price*1.00075))
     telegram.send_alert(data)
     trades_file.seek(0)
     json.dump(data,trades_file)
@@ -131,7 +131,7 @@ def monitor(symbol,buy_price,ema):
             sell(symbol,buy_price)
             return
         else:
-            time.sleep(30)
+            time.sleep(3)
 
 def buy(symbol,close,ema):
     price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
@@ -171,8 +171,8 @@ def list_tickers():
 
 
 def condition(technicals):
-    symbol, price, ema, macd, signal, hist, previous_hist = technicals
-    if price>ema and macd<0 and hist>0 and previous_hist<0 and status=="OPEN":
+    symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
+    if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3 and status=="OPEN":
         buy(symbol,price,ema)
 
 def scan():
@@ -185,7 +185,7 @@ def scan():
 
 if __name__ == "__main__":
     while True:
-        if not scanning and datetime.datetime.now().minute in [14,29,59]:
+        if not scanning:
             x = threading.Thread(target=scan, daemon=True)
             x.start()
-        time.sleep(25)
+        time.sleep(300)
