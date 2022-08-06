@@ -18,7 +18,7 @@ client = Client(config.API_KEY, config.API_SECRET, tld='com')
 
 stop_loss_perc = 2
 profit_perc = 2
-status = "OPEN"
+in_trade = False
 scanning = False
 blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC"]
 whitelist = ["AVAX","MATIC","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
@@ -95,7 +95,7 @@ def technicals(symbol):
 
 def sell(symbol,buy_price):
     sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
-    status = "OPEN"
+    in_trade = False
     print(f"SELL {symbol}")
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
@@ -136,7 +136,7 @@ def monitor(symbol,buy_price,ema):
 def buy(symbol,close,ema):
     price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
     print(f"BUY {symbol}")
-    status = "CLOSE"
+    in_trade = True
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     new_data = {}
@@ -172,7 +172,7 @@ def list_tickers():
 
 def condition(technicals):
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
-    if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3 and status=="OPEN":
+    if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         buy(symbol,price,ema)
 
 def scan():
@@ -185,7 +185,7 @@ def scan():
 
 if __name__ == "__main__":
     while True:
-        if not scanning:
+        if not scanning and not inEX_trade:
             x = threading.Thread(target=scan, daemon=True)
             x.start()
         time.sleep(300)
