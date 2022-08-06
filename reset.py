@@ -1,7 +1,7 @@
 import json
 
 def reset(account):
-    trades_file = open("data.json","r+")
+    trades_file = open("data.json","w")
     data = json.loads(trades_file.read())
     data["account"]=account
     data["trades"]=[]
