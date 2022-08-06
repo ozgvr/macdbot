@@ -86,7 +86,7 @@ def technicals(symbol):
         close = np.array(candles)
         macd, macdsignal, macdhist = talib.MACDEXT(close, fastperiod=12, fastmatype=talib.MA_Type.EMA, slowperiod=26, slowmatype=talib.MA_Type.EMA, signalperiod=9, signalmatype=talib.MA_Type.EMA)
         ema = talib.EMA(close, timeperiod=200)
-        ema3 = talib.EMA(close, timeperiod=200)<talib.EMA(close, timeperiod=100) and talib.EMA(close, timeperiod=50)>talib.EMA(close, timeperiod=100)
+        ema3 = talib.EMA(close, timeperiod=200)[-1]<talib.EMA(close, timeperiod=100)[-1] and talib.EMA(close, timeperiod=50)[-1]>talib.EMA(close, timeperiod=100)[-1]
 
         return [symbol,float(close[-1]),float(ema[-1]),float(macd[-1]),float(macdsignal[-1]),float(macdhist[-1]),float(macdhist[-2]), ema3]
     else:
