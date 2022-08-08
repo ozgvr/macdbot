@@ -185,7 +185,7 @@ def scan():
 
 if __name__ == "__main__":
     while True:
-        if not scanning and not inEX_trade:
+        if not scanning and not in_trade:
             x = threading.Thread(target=scan, daemon=True)
             x.start()
         time.sleep(300)
