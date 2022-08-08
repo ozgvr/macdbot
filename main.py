@@ -86,9 +86,9 @@ def technicals(symbol):
         close = np.array(candles)
         macd, macdsignal, macdhist = talib.MACDEXT(close, fastperiod=12, fastmatype=talib.MA_Type.EMA, slowperiod=26, slowmatype=talib.MA_Type.EMA, signalperiod=9, signalmatype=talib.MA_Type.EMA)
         ema = talib.EMA(close, timeperiod=200)
-        ema3 = talib.EMA(close, timeperiod=200)[-1]<talib.EMA(close, timeperiod=100)[-1] and talib.EMA(close, timeperiod=50)[-1]>talib.EMA(close, timeperiod=100)[-1]
+        ema3 = talib.EMA(close, timeperiod=200)[-2]<talib.EMA(close, timeperiod=100)[-2] and talib.EMA(close, timeperiod=50)[-2]>talib.EMA(close, timeperiod=100)[-2]
 
-        return [symbol,float(close[-1]),float(ema[-1]),float(macd[-1]),float(macdsignal[-1]),float(macdhist[-1]),float(macdhist[-2]), ema3]
+        return [symbol,float(close[-2]),float(ema[-2]),float(macd[-2]),float(macdsignal[-2]),float(macdhist[-2]),float(macdhist[-3]), ema3]
     else:
         return None
 
@@ -183,9 +183,15 @@ def scan():
     print("-- No signal --")
     scanning = False
 
+def start_scan_thread():
+    if not scanning and not in_trade:
+        x = threading.Thread(target=scan, daemon=True)
+        x.start()
+
 if __name__ == "__main__":
+    candle_time = json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6]
     while True:
-        if not scanning and not in_trade:
-            x = threading.Thread(target=scan, daemon=True)
-            x.start()
-        time.sleep(300)
+        if int(time.time())>candle_time+1:
+            start_scan_thread()
+            candle_time = candle_time + 900000
+        time.sleep(0.5)
