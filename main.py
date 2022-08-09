@@ -115,6 +115,8 @@ def sell(symbol,buy_price):
     trades_file.close()
 
 def monitor(symbol,buy_price,ema):
+
+ 
     if abs(perc_change(ema,buy_price))>stop_loss_perc:
         stop = buy_price*((100-stop_loss_perc)/100)
     else:
@@ -123,6 +125,15 @@ def monitor(symbol,buy_price,ema):
         profit = buy_price*((100+(stop_loss_perc*profit_perc))/100)
     else:
         profit = buy_price*((100+(abs(perc_change(ema,buy_price))*profit_perc))/100)
+
+    trades_file = open("data.json","r+")
+    data = json.loads(trades_file.read())
+    data["trades"][0].update({
+            "stop_loss":float(stop),
+            "take_profit":float(profit),
+        })
+    trades_file.close()
+
 
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"])
