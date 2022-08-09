@@ -34,7 +34,6 @@ def get_sell_quantity(sq,symbol):
     for filters in client.get_symbol_info(symbol)["filters"]:
         if (filters["filterType"]=="LOT_SIZE" or filters["filterType"]=="MARKET_LOT_SIZE"):
             stepsizes.append(filters["stepSize"])
-    print(stepsizes)
     return convert_precision(sq,get_precision(float(max(stepsizes))))
 
 def get_precision(step):
@@ -94,6 +93,7 @@ def technicals(symbol):
 
 
 def sell(symbol,buy_price):
+    global in_trade
     sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
     in_trade = False
     print(f"SELL {symbol}")
@@ -126,7 +126,7 @@ def monitor(symbol,buy_price,ema):
 
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"])
-        print(f"{stop}|{close}|{profit}")
+        print(f"{stop}|{close}|{profit}", end = "\r")
         if close>=profit or close<=stop:
             sell(symbol,buy_price)
             return
@@ -134,6 +134,7 @@ def monitor(symbol,buy_price,ema):
             time.sleep(3)
 
 def buy(symbol,close,ema):
+    global in_trade
     price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
     print(f"BUY {symbol}")
     in_trade = True
@@ -144,7 +145,8 @@ def buy(symbol,close,ema):
             "ticker":str(symbol),
             "position_buy_price":float(price),
             "position_type":"open",
-            "buy_timestamp":str(datetime.datetime.now())
+            "buy_timestamp":str(datetime.datetime.now()),
+            "ema":ema
         })
     data["trades"].insert(0,new_data)
     data["open_trades"]+=1
@@ -172,26 +174,40 @@ def list_tickers():
 
 def condition(technicals):
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
+    print(technicals)
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         buy(symbol,price,ema)
 
 def scan():
+    global scanning
     scanning = True
     print("-- Checking signals --")
     for ticker in list_tickers():
         condition(technicals(ticker))
+        scanning = False
+        return
     print("-- No signal --")
-    scanning = False
 
 def start_scan_thread():
+    global scanning
+    global in_trade
     if not scanning and not in_trade:
         x = threading.Thread(target=scan, daemon=True)
         x.start()
 
 if __name__ == "__main__":
-    candle_time = json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6]
+    candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
+    print(candle_time)
+    trades_file = open("data.json","r+")
+    data = json.loads(trades_file.read())
+    if data["open_trades"] == 1:
+        monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])
+
     while True:
-        if int(time.time())>candle_time+1:
+        print(int(time.time()), end = "\r")
+        if int(time.time())>candle_time:
+            print("True")
             start_scan_thread()
-            candle_time = candle_time + 900000
+            candle_time = candle_time + 900
+            print(candle_time)
         time.sleep(0.5)
