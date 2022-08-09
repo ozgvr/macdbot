@@ -212,6 +212,7 @@ if __name__ == "__main__":
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     if data["open_trades"] == 1:
+        in_trade = True
         monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])
     trades_file.close()
 
