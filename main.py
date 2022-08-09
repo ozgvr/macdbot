@@ -146,7 +146,7 @@ def buy(symbol,close,ema):
             "position_buy_price":float(price),
             "position_type":"open",
             "buy_timestamp":str(datetime.datetime.now()),
-            "ema":ema
+            "ema":float(ema)
         })
     data["trades"].insert(0,new_data)
     data["open_trades"]+=1
