@@ -184,6 +184,7 @@ def list_tickers():
 
 
 def condition(technicals):
+    global scanning
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
     print(technicals)
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
@@ -195,9 +196,8 @@ def scan():
     print("-- Checking signals --")
     for ticker in list_tickers():
         condition(technicals(ticker))
-        scanning = False
-        return
     print("-- No signal --")
+    scanning = False
 
 def start_scan_thread():
     global scanning
