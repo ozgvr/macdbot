@@ -137,8 +137,9 @@ def monitor(symbol,buy_price,ema):
 
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"])
-        print(f"{stop}|{close}|{profit}", end = "\r")
+        print(f"{symbol} | {stop}|{close}|{profit}", end = "\r")
         if close>=profit or close<=stop:
+            print("")
             sell(symbol,buy_price)
             return
         else:
@@ -208,7 +209,6 @@ def start_scan_thread():
 
 if __name__ == "__main__":
     candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
-    print(candle_time)
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     if data["open_trades"] == 1:
@@ -217,9 +217,8 @@ if __name__ == "__main__":
     trades_file.close()
 
     while True:
-        print(int(time.time()), end = "\r")
         if int(time.time())>candle_time:
-            print("True")
+            print("scan time :" + str(time.time()))
             start_scan_thread()
             candle_time = candle_time + 900
             print(candle_time)
