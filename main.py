@@ -187,17 +187,16 @@ def list_tickers():
 def condition(technicals):
     global scanning
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
-    print(technicals)
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         buy(symbol,price,ema)
 
 def scan():
     global scanning
     scanning = True
-    print("-- Checking signals --")
+    print("--- Checking signals")
     for ticker in list_tickers():
         condition(technicals(ticker))
-    print("-- No signal --")
+    print("--- No signal")
     scanning = False
 
 def start_scan_thread():
@@ -217,9 +216,8 @@ if __name__ == "__main__":
     trades_file.close()
 
     while True:
+        print("--- Waiting for candle close : " + int(candle_time)-int(time.time()))
         if int(time.time())>candle_time:
-            print("scan time :" + str(time.time()))
             start_scan_thread()
             candle_time = candle_time + 900
-            print(candle_time)
         time.sleep(0.5)
