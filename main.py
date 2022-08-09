@@ -216,7 +216,7 @@ if __name__ == "__main__":
     trades_file.close()
 
     while True:
-        print("--- Waiting for candle close : " + int(candle_time)-int(time.time()))
+        print("--- Waiting for candle close : " + str(int(candle_time)-int(time.time())))
         if int(time.time())>candle_time:
             start_scan_thread()
             candle_time = candle_time + 900
