@@ -96,7 +96,7 @@ def sell(symbol,buy_price):
     global in_trade
     sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
     in_trade = False
-    print(f"SELL {symbol}")
+    print(f"----- SELL {symbol}")
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     data["trades"][0].update({
@@ -136,7 +136,7 @@ def monitor(symbol,buy_price,ema):
 
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"])
-        print(f"{symbol} | {stop}|{close}|{profit}", end = "\r")
+        print(f"------ {symbol} | {stop}|{close}|{profit}", end = "\r")
         if close>=profit or close<=stop:
             print("")
             sell(symbol,buy_price)
@@ -147,7 +147,7 @@ def monitor(symbol,buy_price,ema):
 def buy(symbol,close,ema):
     global in_trade
     price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
-    print(f"BUY {symbol}")
+    print(f"----- BUY {symbol}")
     in_trade = True
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
@@ -193,13 +193,13 @@ def condition(technicals):
 def scan():
     global scanning
     scanning = True
-    print("--- Checking signals")
+    print("---- Checking signals")
     tickers = list_tickers()
     for count, ticker in enumerate(tickers):
-        print("-- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
+        print("----- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
         condition(technicals(ticker))
     print("")
-    print("--- No signal")
+    print("---- No signal")
     scanning = False
 
 def start_scan_thread():
@@ -216,11 +216,12 @@ if __name__ == "__main__":
     data = json.loads(trades_file.read())
     print("-- Checking for open trades")
     if data["open_trades"] == 1:
-        print("-- Open trade found")
         in_trade = True
+        print("--- Open trade found")
+        print("----- BUY {}".format(data["trades"][0]["ticker"]))
         monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])
     else:
-        print("-- No open trade found")
+        print("--- No open trade found")
     trades_file.close()
     
 
