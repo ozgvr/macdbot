@@ -187,14 +187,18 @@ def condition(technicals):
     global scanning
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
+        print("")
         buy(symbol,price,ema)
 
 def scan():
     global scanning
     scanning = True
     print("--- Checking signals")
-    for ticker in list_tickers():
+    tickers = list_tickers()
+    for count, ticker in enumerate(tickers):
+        print("-- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
         condition(technicals(ticker))
+    print("")
     print("--- No signal")
     scanning = False
 
@@ -206,14 +210,21 @@ def start_scan_thread():
         x.start()
 
 if __name__ == "__main__":
+    print("- Bot started")
     candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
+    print("-- Checking for open trades")
     if data["open_trades"] == 1:
+        print("-- Open trade found")
         in_trade = True
         monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])
+    else:
+        print("-- No open trade found")
     trades_file.close()
+    
 
+    print("-- Starting candle timer")
     while True:
         if int(time.time())>candle_time:
             print("--- New candle close")
