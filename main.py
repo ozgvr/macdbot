@@ -20,7 +20,7 @@ stop_loss_perc = 2
 profit_perc = 2
 in_trade = False
 scanning = False
-blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC"]
+blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC","PAXG"]
 whitelist = ["AVAX","MATIC","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
 
 def avg_price(data):
@@ -134,7 +134,6 @@ def monitor(symbol,buy_price,ema):
         })
     trades_file.close()
 
-
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"])
         print(f"{symbol} | {stop}|{close}|{profit}", end = "\r")
@@ -216,8 +215,8 @@ if __name__ == "__main__":
     trades_file.close()
 
     while True:
-        print("--- Waiting for candle close : " + str(int(candle_time)-int(time.time())))
         if int(time.time())>candle_time:
+            print("--- New candle close")
             start_scan_thread()
             candle_time = candle_time + 900
         time.sleep(0.5)
