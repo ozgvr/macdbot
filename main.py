@@ -116,7 +116,6 @@ def sell(symbol,buy_price):
 
 def monitor(symbol,buy_price,ema):
 
- 
     if abs(perc_change(ema,buy_price))>stop_loss_perc:
         stop = buy_price*((100-stop_loss_perc)/100)
     else:
@@ -132,7 +131,7 @@ def monitor(symbol,buy_price,ema):
             "stop_loss":float(stop),
             "take_profit":float(profit),
         })
-    data = json.loads(trades_file.read())
+    json.dump(data,trades_file)
     trades_file.close()
 
     print(f"------- {symbol} | {stop}|{buy_price}|{profit}")
@@ -213,8 +212,9 @@ def start_scan_thread():
 if __name__ == "__main__":
     print("- Bot started")
     candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
-    trades_file = open("data.json","r+")
+    trades_file = open("data.json","r")
     data = json.loads(trades_file.read())
+    trades_file.close()
     print("-- Checking for open trades")
     if data["open_trades"] == 1:
         in_trade = True
@@ -223,7 +223,6 @@ if __name__ == "__main__":
         monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])
     else:
         print("--- No open trade found")
-    trades_file.close()
     
 
     print("-- Starting candle timer")
