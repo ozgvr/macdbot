@@ -131,6 +131,7 @@ def monitor(symbol,buy_price,ema):
             "stop_loss":float(stop),
             "take_profit":float(profit),
         })
+    trades_file.seek(0)
     json.dump(data,trades_file)
     trades_file.close()
 
