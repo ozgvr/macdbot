@@ -135,9 +135,9 @@ def monitor(symbol,buy_price,ema):
     data = json.loads(trades_file.read())
     trades_file.close()
 
+    print(f"------- {symbol} | {stop}|{buy_price}|{profit}")
     while True:
         close = float(client.get_symbol_ticker(symbol=symbol)["price"])
-        print(f"------- {symbol} | {stop}|{close}|{profit}", end = "\r")
         if close>=profit or close<=stop:
             print("")
             sell(symbol,buy_price)
