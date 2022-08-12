@@ -217,7 +217,6 @@ def start_scan_thread():
 
 if __name__ == "__main__":
     print("- Bot started")
-    candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
     trades_file = open("data.json","r")
     data = json.loads(trades_file.read())
     trades_file.close()
@@ -232,6 +231,7 @@ if __name__ == "__main__":
     
 
     print("-- Starting candle timer")
+    candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
     while True:
         if int(time.time())>candle_time:
             print("--- New candle close")
