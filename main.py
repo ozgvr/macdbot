@@ -10,17 +10,15 @@ import requests
 from binance.client import Client
 from binance.enums import *
 
-import config
+from config import API_KEY, API_SECRET
+from strategy import *
 import telegram
 
-client = Client(config.API_KEY, config.API_SECRET, tld='com')
+client = Client(API_KEY, API_SECRET, tld='com')
 
-stop_loss_perc = 2
-profit_perc = 2
-in_trade = False
-scanning = False
-blacklist = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC","PAXG"]
-whitelist = ["AVAX","MATIC","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
+
+IN_TRADE = False
+SCANNING = False
 
 def avg_price(data):
     return sum([float(fill["price"])*float(fill["qty"]) for fill in data["fills"]])/sum([float(fill["qty"]) for fill in data["fills"]])
@@ -92,9 +90,9 @@ def technicals(symbol):
 
 
 def sell(symbol,buy_price):
-    global in_trade
+    global IN_TRADE
     sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
-    in_trade = False
+    IN_TRADE = False
     print(f"------ SELL {symbol}")
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
@@ -115,14 +113,14 @@ def sell(symbol,buy_price):
 
 def monitor(symbol,buy_price,ema):
 
-    if abs(perc_change(ema,buy_price))>stop_loss_perc:
-        stop = buy_price*((100-stop_loss_perc)/100)
+    if abs(perc_change(ema,buy_price))>STOP_LOSS_PERC:
+        stop = buy_price*((100-STOP_LOSS_PERC)/100)
     else:
         stop = ema
-    if abs(perc_change(ema,buy_price))>stop_loss_perc:
-        profit = buy_price*((100+(stop_loss_perc*profit_perc))/100)
+    if abs(perc_change(ema,buy_price))>STOP_LOSS_PERC:
+        profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_PERC))/100)
     else:
-        profit = buy_price*((100+(abs(perc_change(ema,buy_price))*profit_perc))/100)
+        profit = buy_price*((100+(abs(perc_change(ema,buy_price))*PROFIT_PERC))/100)
 
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
@@ -145,10 +143,10 @@ def monitor(symbol,buy_price,ema):
             time.sleep(3)
 
 def buy(symbol,close,ema):
-    global in_trade
+    global IN_TRADE
     price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
     print(f"------ BUY {symbol}")
-    in_trade = True
+    IN_TRADE = True
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     new_data = {}
@@ -174,7 +172,7 @@ def list_tickers():
     pairs = []
 
     for pair in tickers['symbols']:
-        if (pair['baseAsset'] not in stablecoins and pair['baseAsset'] not in blacklist
+        if (pair['baseAsset'] not in stablecoins and pair['baseAsset'] not in BLACKLIST
         and pair['status'] == "TRADING" and pair['quoteAsset'] == "USDT"
         and pair['baseAsset'][-4:] != "DOWN" and pair['baseAsset'][-4:] != "BEAR"
         and pair['baseAsset'][-2:] != "UP" and pair['baseAsset'][-4:] != "BULL"
@@ -184,7 +182,7 @@ def list_tickers():
 
 
 def condition(technicals):
-    global scanning
+    global SCANNING
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         print("")
@@ -194,23 +192,23 @@ def condition(technicals):
         return False
 
 def scan():
-    global scanning
-    scanning = True
+    global SCANNING
+    SCANNING = True
     print("---- Checking signals")
     tickers = list_tickers()
     for count, ticker in enumerate(tickers):
         print("----- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
         if condition(technicals(ticker)):
-            scanning = False
+            SCANNING = False
             return
     print("")
     print("---- No signal")
-    scanning = False
+    SCANNING = False
 
 def start_scan_thread():
-    global scanning
-    global in_trade
-    if not scanning and not in_trade:
+    global SCANNING
+    global IN_TRADE
+    if not SCANNING and not IN_TRADE:
         x = threading.Thread(target=scan, daemon=True)
         x.start()
 
@@ -221,7 +219,7 @@ if __name__ == "__main__":
     trades_file.close()
     print("-- Checking for open trades")
     if data["open_trades"] == 1:
-        in_trade = True
+        IN_TRADE = True
         print("--- Open trade found")
         print("------ BUY {}".format(data["trades"][0]["ticker"]))
         monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])

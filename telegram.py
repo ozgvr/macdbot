@@ -1,5 +1,7 @@
+import imp
+from multiprocessing.spawn import import_main_path
 import requests
-import config
+from config import CHAT_ID, BOT_API
 
 def send_alert(trades):
     total_profit = str(round(((trades["profit"]-1)*100),2))+"%"
@@ -16,5 +18,5 @@ def send_alert(trades):
             result = "LOSS"
         message = "SELL {} {} {} WR {} AC {}".format(symbol,result,str(round((sell_price-buy_price)/buy_price*100,2))+"%",winrate,total_profit)
 
-    data = {"chat_id":config.CHAT_ID,"text":message}   
-    requests.post(url="https://api.telegram.org/"+config.BOT_API+"/sendMessage",data=data)
+    data = {"chat_id":CHAT_ID,"text":message}   
+    requests.post(url="https://api.telegram.org/"+BOT_API+"/sendMessage",data=data)
