@@ -1,5 +1,4 @@
 import json
-from os import scandir
 import threading
 import time
 import datetime
