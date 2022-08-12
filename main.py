@@ -190,6 +190,9 @@ def condition(technicals):
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         print("")
         buy(symbol,price,ema)
+        return True
+    else:
+        return False
 
 def scan():
     global scanning
@@ -198,7 +201,9 @@ def scan():
     tickers = list_tickers()
     for count, ticker in enumerate(tickers):
         print("----- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
-        condition(technicals(ticker))
+        if condition(technicals(ticker)):
+            scanning = False
+            return
     print("")
     print("---- No signal")
     scanning = False
