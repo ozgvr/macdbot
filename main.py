@@ -2,6 +2,7 @@ import json
 import threading
 import time
 import datetime
+from tkinter import E
 
 import talib
 import numpy as np
@@ -57,8 +58,9 @@ def buy_order(symbol):
     buy_quantity = client.get_asset_balance("USDT")['free']
     try:
         return client.create_order(symbol=symbol, side="BUY", type=ORDER_TYPE_MARKET, quoteOrderQty=buy_quantity)
-    except Exception as exception:
-        return exception
+    except Exception as e:
+        print(e)
+        return e
 
 def sell_order(symbol):
 
@@ -67,6 +69,7 @@ def sell_order(symbol):
     try:
         return client.create_order(symbol=symbol, side="SELL", type=ORDER_TYPE_MARKET, quantity=sell_quantity)
     except Exception as e:
+        print(e)
         return e
 
 def klines(symbol):
@@ -91,7 +94,11 @@ def technicals(symbol):
 
 def sell(symbol,buy_price):
     global IN_TRADE
-    sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
+    try:
+        sell_price = float(str(avg_price(sell_order(symbol=symbol)))[:len(str(buy_price))])
+    except Exception as e:
+        print(e)
+        return
     IN_TRADE = False
     print(f"------ SELL {symbol}")
     trades_file = open("data.json","r+")
@@ -134,7 +141,10 @@ def monitor(symbol,buy_price,ema):
 
     print(f"------- {symbol} | {stop}|{buy_price}|{profit}")
     while True:
-        close = float(client.get_symbol_ticker(symbol=symbol)["price"])
+        try:
+            close = float(client.get_symbol_ticker(symbol=symbol)["price"])
+        except Exception as e:
+            print(e)
         if close>=profit or close<=stop:
             print("")
             sell(symbol,buy_price)
@@ -144,7 +154,11 @@ def monitor(symbol,buy_price,ema):
 
 def buy(symbol,close,ema):
     global IN_TRADE
-    price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
+    try:
+        price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
+    except Exception as e:
+        print(e)
+        return
     print(f"------ BUY {symbol}")
     IN_TRADE = True
     trades_file = open("data.json","r+")
