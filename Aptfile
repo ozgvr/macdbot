@@ -1,0 +1,12 @@
+build-essential
+wget
+curl
+libffi-dev
+libssl-dev
+libxml2-dev
+libxslt-dev
+libjpeg-dev
+libpng-dev
+libtiff-dev
+libwebp-dev
+zlib1g-dev
