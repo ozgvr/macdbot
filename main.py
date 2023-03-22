@@ -202,6 +202,8 @@ def list_tickers():
 
 
 def buy_condition(technicals):
+    if not technicals:
+        return False
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         print("")
