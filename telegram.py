@@ -1,5 +1,3 @@
-import imp
-from multiprocessing.spawn import import_main_path
 import requests
 from config import CHAT_ID, BOT_API
 
