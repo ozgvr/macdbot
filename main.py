@@ -2,11 +2,9 @@ import json
 import threading
 import time
 import datetime
-from tkinter import E
 
 import talib
 import numpy as np
-import requests
 
 from binance.client import Client
 from binance.enums import *
@@ -79,14 +77,14 @@ def klines(symbol):
         return None
     return candles
 
-def technicals(symbol):
+def get_technicals(symbol):
     candles = klines(symbol)
     if candles is not None:
         close = np.array(candles)
         macd, macdsignal, macdhist = talib.MACDEXT(close, fastperiod=12, fastmatype=talib.MA_Type.EMA, slowperiod=26, slowmatype=talib.MA_Type.EMA, signalperiod=9, signalmatype=talib.MA_Type.EMA)
         ema = talib.EMA(close, timeperiod=200)
         ema3 = talib.EMA(close, timeperiod=200)[-2]<talib.EMA(close, timeperiod=100)[-2] and talib.EMA(close, timeperiod=50)[-2]>talib.EMA(close, timeperiod=100)[-2]
-
+        
         return [symbol,float(close[-2]),float(ema[-2]),float(macd[-2]),float(macdsignal[-2]),float(macdhist[-2]),float(macdhist[-3]), ema3]
     else:
         return None
@@ -120,15 +118,15 @@ def sell(symbol,buy_price):
 
 def monitor(symbol,buy_price,ema):
 
-    if abs(perc_change(ema,buy_price))>STOP_LOSS_PERC:
+    ema_diff = abs(perc_change(ema,buy_price))
+
+    if ema_diff>STOP_LOSS_PERC:
         stop = buy_price*((100-STOP_LOSS_PERC)/100)
+        profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_FACTOR))/100)
     else:
         stop = ema
-    if abs(perc_change(ema,buy_price))>STOP_LOSS_PERC:
-        profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_PERC))/100)
-    else:
-        profit = buy_price*((100+(abs(perc_change(ema,buy_price))*PROFIT_PERC))/100)
-
+        profit = buy_price*((100+(ema_diff*PROFIT_FACTOR)))/100
+    
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
     data["trades"][0].update({
@@ -139,10 +137,10 @@ def monitor(symbol,buy_price,ema):
     json.dump(data,trades_file)
     trades_file.close()
 
-    print(f"------- {symbol} | {stop}|{buy_price}|{profit}")
     while True:
         try:
             close = float(client.get_symbol_ticker(symbol=symbol)["price"])
+            print(f"------- {symbol} P: {close}| SL: {stop} | TP: {profit} | PNL: %{perc_change(close,buy_price)}")
         except Exception as e:
             print(e)
         if close>=profit or close<=stop:
@@ -150,7 +148,8 @@ def monitor(symbol,buy_price,ema):
             sell(symbol,buy_price)
             return
         else:
-            time.sleep(3)
+            time.sleep(5)
+            
 
 def buy(symbol,close,ema):
     global IN_TRADE
@@ -181,7 +180,7 @@ def buy(symbol,close,ema):
     monitor(symbol,price,ema)
 
 def list_tickers():
-    tickers = json.loads(requests.get('https://api.binance.com/api/v3/exchangeInfo').text)
+    tickers = client.get_exchange_info()
     stablecoins = ["USDC","BUSD","USDP","TUSD"]
     pairs = []
 
@@ -195,12 +194,10 @@ def list_tickers():
     return pairs
 
 
-def condition(technicals):
-    global SCANNING
+def buy_condition(technicals):
     symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
     if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
         print("")
-        buy(symbol,price,ema)
         return True
     else:
         return False
@@ -212,19 +209,18 @@ def scan():
     tickers = list_tickers()
     for count, ticker in enumerate(tickers):
         print("----- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
-        if condition(technicals(ticker)):
+        technicals = get_technicals(ticker)
+        if buy_condition(technicals):
+            symbol = technicals[0]
+            price = technicals[1]
+            ema = technicals[2]
+            buy(symbol,price,ema)
             SCANNING = False
             return
     print("")
     print("---- No signal")
     SCANNING = False
-
-def start_scan_thread():
-    global SCANNING
-    global IN_TRADE
-    if not SCANNING and not IN_TRADE:
-        x = threading.Thread(target=scan, daemon=True)
-        x.start()
+    return
 
 if __name__ == "__main__":
     print("- Bot started")
@@ -242,10 +238,11 @@ if __name__ == "__main__":
     
 
     print("-- Starting candle timer")
-    candle_time = int(str(json.loads(requests.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=1").text)[0][6])[:-3])
     while True:
-        if int(time.time())>candle_time:
-            print("--- New candle close")
-            start_scan_thread()
-            candle_time = candle_time + 900
+        if not SCANNING and not IN_TRADE:
+            if int(time.time())%900 == 0:
+                print("")
+                print(f"--- New candle close")
+                x = threading.Thread(target=scan, daemon=True)
+                x.start()
         time.sleep(0.5)
