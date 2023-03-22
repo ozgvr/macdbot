@@ -9,7 +9,14 @@ import numpy as np
 from binance.client import Client
 from binance.enums import *
 
-from config import API_KEY, API_SECRET
+#Local
+#from config import API_KEY, API_SECRET
+
+#Heroku
+import os
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+
 from strategy import *
 import telegram
 
