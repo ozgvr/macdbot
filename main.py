@@ -79,7 +79,7 @@ def sell_order(symbol):
 
 def klines(symbol):
     try:
-        candles = [float(x[4]) for x in client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=1000)]
+        candles = [float(x[4]) for x in client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_30MINUTE, limit=1000)]
     except:
         return None
     return candles
@@ -249,7 +249,7 @@ if __name__ == "__main__":
     print("-- Starting candle timer")
     while True:
         if not SCANNING and not IN_TRADE:
-            if int(time.time())%900 == 0:
+            if int(time.time())%1800 == 0:
                 print("")
                 print(f"--- New candle close")
                 x = threading.Thread(target=scan, daemon=True)
