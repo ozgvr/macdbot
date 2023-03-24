@@ -90,9 +90,9 @@ def get_technicals(symbol):
         close = np.array(candles)
         macd, macdsignal, macdhist = talib.MACDEXT(close, fastperiod=12, fastmatype=talib.MA_Type.EMA, slowperiod=26, slowmatype=talib.MA_Type.EMA, signalperiod=9, signalmatype=talib.MA_Type.EMA)
         ema = talib.EMA(close, timeperiod=200)
-        ema3 = talib.EMA(close, timeperiod=200)[-2]<talib.EMA(close, timeperiod=100)[-2] and talib.EMA(close, timeperiod=50)[-2]>talib.EMA(close, timeperiod=100)[-2]
+        ma = talib.SMA(close, timeperiod=200)
         
-        return [symbol,float(close[-2]),float(ema[-2]),float(macd[-2]),float(macdsignal[-2]),float(macdhist[-2]),float(macdhist[-3]), ema3]
+        return [symbol,float(close[-2]),float(ema[-2]),float(macd[-2]),float(macdsignal[-2]),float(macdhist[-2]),float(macdhist[-3]), float(ma[-2])]
     else:
         return None
 
@@ -123,16 +123,16 @@ def sell(symbol,buy_price):
     json.dump(data,trades_file)
     trades_file.close()
 
-def monitor(symbol,buy_price,ema):
+def monitor(symbol,buy_price,ma):
 
-    ema_diff = abs(perc_change(ema,buy_price))
+    ma_diff = abs(perc_change(ma,buy_price))
 
-    if ema_diff>STOP_LOSS_PERC:
+    if ma_diff>STOP_LOSS_PERC:
         stop = buy_price*((100-STOP_LOSS_PERC)/100)
         profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_FACTOR))/100)
     else:
-        stop = ema
-        profit = buy_price*((100+(ema_diff*PROFIT_FACTOR)))/100
+        stop = ma
+        profit = buy_price*((100+(ma_diff*PROFIT_FACTOR)))/100
     
     trades_file = open("data.json","r+")
     data = json.loads(trades_file.read())
@@ -158,7 +158,7 @@ def monitor(symbol,buy_price,ema):
             time.sleep(5)
             
 
-def buy(symbol,close,ema):
+def buy(symbol,close,ma):
     global IN_TRADE
     try:
         price = float(str(avg_price(buy_order(symbol=symbol)))[:len(str(close))])
@@ -175,7 +175,7 @@ def buy(symbol,close,ema):
             "position_buy_price":float(price),
             "position_type":"open",
             "buy_timestamp":str(datetime.datetime.now()),
-            "ema":float(ema)
+            "ma":float(ma)
         })
     data["trades"].insert(0,new_data)
     data["open_trades"]+=1
@@ -184,7 +184,7 @@ def buy(symbol,close,ema):
     json.dump(data,trades_file)
     trades_file.close()
 
-    monitor(symbol,price,ema)
+    monitor(symbol,price,ma)
 
 def list_tickers():
     tickers = client.get_exchange_info()
@@ -204,8 +204,8 @@ def list_tickers():
 def buy_condition(technicals):
     if not technicals:
         return False
-    symbol, price, ema, macd, signal, hist, previous_hist, ema3 = technicals
-    if price>ema and macd<0 and hist>0 and previous_hist<0 and ema3:
+    symbol, price, ema, macd, signal, hist, previous_hist, ma = technicals
+    if price>ema and macd<0 and hist>0 and previous_hist<0:
         print("")
         return True
     else:
@@ -222,8 +222,8 @@ def scan():
         if buy_condition(technicals):
             symbol = technicals[0]
             price = technicals[1]
-            ema = technicals[2]
-            buy(symbol,price,ema)
+            ma = technicals[-1]
+            buy(symbol,price,ma)
             SCANNING = False
             return
     print("")
@@ -241,7 +241,7 @@ if __name__ == "__main__":
         IN_TRADE = True
         print("--- Open trade found")
         print("------ BUY {}".format(data["trades"][0]["ticker"]))
-        monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ema"])
+        monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ma"])
     else:
         print("--- No open trade found")
     
