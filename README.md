@@ -4,12 +4,16 @@ This is a Python-based trading bot that uses the Moving Average Convergence Dive
 ## Installation
 Clone the repository to your local machine:
 ```bash
-git clone https://github.com/your-username/macd-bot.git
+git clone https://github.com/ozgurakinj/macdbot.git
 ```
 Install the required dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+Install TA-Lib library for technical analysis:
+
+https://pypi.org/project/TA-Lib/
+
 Update config.py and strategy.py files with your API credentials and preferred strategy.
 
 ## Usage
