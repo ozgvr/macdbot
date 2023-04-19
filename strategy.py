@@ -1,9 +1,9 @@
+from utils import perc_change
+
 STOP_LOSS_PERC = 2
 PROFIT_FACTOR = 2
 BLACKLIST = ["RUB","EUR","TRY","GBP","AUD","UAH","BRL","NGN","DAI","BIDR","IDRT","PAX","VAI","BTTC","PAXG"]
 WHITELIST = ["AVAX","MATIC","AR","CRV","CHR","CVC","COS","NBS","SAND","DGB","DNT","ENJ","ERN","RAY","RUNE"]
-
-from utils import perc_change
 
 def buy_condition(technicals):
     if not technicals:
@@ -16,7 +16,7 @@ def buy_condition(technicals):
         return False
 
 def sell_condition(buy_price,ma):
-    
+
     #ma_diff = abs(perc_change(ma,buy_price))
     #if ma_diff>STOP_LOSS_PERC:
     stop = buy_price*((100-STOP_LOSS_PERC)/100)
