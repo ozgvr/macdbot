@@ -16,14 +16,14 @@ def buy_condition(technicals):
         return False
 
 def sell_condition(buy_price,ma):
-    ma_diff = abs(perc_change(ma,buy_price))
-
-    if ma_diff>STOP_LOSS_PERC:
-        stop = buy_price*((100-STOP_LOSS_PERC)/100)
-        profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_FACTOR))/100)
-    else:
-        stop = ma
-        profit = buy_price*((100+(ma_diff*PROFIT_FACTOR)))/100
+    
+    #ma_diff = abs(perc_change(ma,buy_price))
+    #if ma_diff>STOP_LOSS_PERC:
+    stop = buy_price*((100-STOP_LOSS_PERC)/100)
+    profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_FACTOR))/100)
+    #else:
+    #    stop = ma
+    #    profit = buy_price*((100+(ma_diff*PROFIT_FACTOR)))/100
 
     return [stop,profit]
     
