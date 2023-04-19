@@ -82,15 +82,7 @@ def sell(symbol,buy_price):
 
 def monitor(symbol,buy_price,ma):
 
-    ma_diff = abs(perc_change(ma,buy_price))
-
-    if ma_diff>STOP_LOSS_PERC:
-        stop = buy_price*((100-STOP_LOSS_PERC)/100)
-        profit = buy_price*((100+(STOP_LOSS_PERC*PROFIT_FACTOR))/100)
-    else:
-        stop = ma
-        profit = buy_price*((100+(ma_diff*PROFIT_FACTOR)))/100
-    
+    stop, profit = sell_condition(buy_price, ma)
     file_handler.update_stop_profit(stop,profit)
 
     while True:
@@ -134,17 +126,6 @@ def list_tickers():
         ):
             pairs.append(pair['symbol'])
     return pairs
-
-
-def buy_condition(technicals):
-    if not technicals:
-        return False
-    symbol, price, ema, macd, signal, hist, previous_hist, ma = technicals
-    if price>ema and macd<0 and hist>0 and previous_hist<0:
-        print("")
-        return True
-    else:
-        return False
 
 def scan():
     global SCANNING
