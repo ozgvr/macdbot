@@ -7,7 +7,7 @@ import talib
 import numpy as np
 from binance.client import Client
 from binance.enums import *
-from config import DEBUG, API_KEY, API_SECRET
+from .config import DEBUG, API_KEY, API_SECRET
 
 if not DEBUG:
     API_KEY = os.getenv("API_KEY")

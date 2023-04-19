@@ -1,7 +1,7 @@
 import requests
 import os
 
-from config import DEBUG, CHAT_ID, BOT_API
+from .config import DEBUG, CHAT_ID, BOT_API
 
 if not DEBUG:
     CHAT_ID = os.getenv("CHAT_ID")
