@@ -1,12 +1,11 @@
 import requests
-
-#Local
-#from config import CHAT_ID, BOT_API
-
-#Heroku
 import os
-CHAT_ID = os.getenv("CHAT_ID")
-BOT_API = os.getenv("BOT_API")
+
+from config import DEBUG, CHAT_ID, BOT_API
+
+if not DEBUG:
+    CHAT_ID = os.getenv("CHAT_ID")
+    BOT_API = os.getenv("BOT_API")
 
 def send_alert(trades):
     total_profit = str(round(((trades["profit"]-1)*100),2))+"%"

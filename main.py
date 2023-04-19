@@ -1,63 +1,35 @@
+import os
 import json
 import threading
 import time
-import datetime
+import file_handler
 
 import talib
 import numpy as np
-
 from binance.client import Client
 from binance.enums import *
+from config import DEBUG, API_KEY, API_SECRET
 
-#Local
-#from config import API_KEY, API_SECRET
+if not DEBUG:
+    API_KEY = os.getenv("API_KEY")
+    API_SECRET = os.getenv("API_SECRET")
 
-#Heroku
-import os
-API_KEY = os.getenv("API_KEY")
-API_SECRET = os.getenv("API_SECRET")
-
+from utils import avg_price, perc_change, convert_precision, get_precision
 from strategy import *
 import telegram
 
 client = Client(API_KEY, API_SECRET, tld='com')
 
-
 IN_TRADE = False
 SCANNING = False
 
-def avg_price(data):
-    return sum([float(fill["price"])*float(fill["qty"]) for fill in data["fills"]])/sum([float(fill["qty"]) for fill in data["fills"]])
 
-def perc_change(num_1,num_2):
-    return ((num_1-num_2)/num_2)*100
-
-def get_sell_quantity(sq,symbol):
+def get_sell_quantity(sq, symbol):
     stepsizes = []
     for filters in client.get_symbol_info(symbol)["filters"]:
-        if (filters["filterType"]=="LOT_SIZE" or filters["filterType"]=="MARKET_LOT_SIZE"):
+        if (filters["filterType"] == "LOT_SIZE" or filters["filterType"] == "MARKET_LOT_SIZE"):
             stepsizes.append(filters["stepSize"])
-    return convert_precision(sq,get_precision(float(max(stepsizes))))
-
-def get_precision(step):
-    precision = 0
-    if step==0:
-        return 200
-    while step!=1.0:
-        step = step * 10
-        precision = precision + 1
-    return precision
-
-def convert_precision(value, precision):
-    if precision==200 :
-        return value
-    dot = ""
-    whole,decimal = str(value).split('.')
-    if precision==0:
-        return int(whole)
-    else:
-        dot = "."
-        return str(whole)+str(dot)+str(decimal)[:precision]
+    return convert_precision(sq, get_precision(float(max(stepsizes))))
 
 def buy_order(symbol):
     buy_quantity = client.get_asset_balance("USDT")['free']
@@ -69,8 +41,9 @@ def buy_order(symbol):
 
 def sell_order(symbol):
 
-    sell_quantity = client.get_asset_balance(symbol[:-4])['free']
-    sell_quantity = get_sell_quantity(sell_quantity,symbol)
+    balance_available = client.get_asset_balance(symbol[:-4])['free']
+    sell_quantity = get_sell_quantity(balance_available,symbol)
+
     try:
         return client.create_order(symbol=symbol, side="SELL", type=ORDER_TYPE_MARKET, quantity=sell_quantity)
     except Exception as e:
@@ -79,14 +52,13 @@ def sell_order(symbol):
 
 def klines(symbol):
     try:
-        candles = [float(x[4]) for x in client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_30MINUTE, limit=1000)]
+        return [float(x[4]) for x in client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_15MINUTE, limit=1000)]
     except:
-        return None
-    return candles
+        return []
 
 def get_technicals(symbol):
     candles = klines(symbol)
-    if candles is not None:
+    if candles:
         close = np.array(candles)
         macd, macdsignal, macdhist = talib.MACDEXT(close, fastperiod=12, fastmatype=talib.MA_Type.EMA, slowperiod=26, slowmatype=talib.MA_Type.EMA, signalperiod=9, signalmatype=talib.MA_Type.EMA)
         ema = talib.EMA(close, timeperiod=200)
@@ -94,8 +66,7 @@ def get_technicals(symbol):
         
         return [symbol,float(close[-2]),float(ema[-2]),float(macd[-2]),float(macdsignal[-2]),float(macdhist[-2]),float(macdhist[-3]), float(ma[-2])]
     else:
-        return None
-
+        return []
 
 def sell(symbol,buy_price):
     global IN_TRADE
@@ -106,22 +77,8 @@ def sell(symbol,buy_price):
         return
     IN_TRADE = False
     print(f"------ SELL {symbol}")
-    trades_file = open("data.json","r+")
-    data = json.loads(trades_file.read())
-    data["trades"][0].update({
-            "position_sell_price":float(sell_price),
-            "position_type":"close",
-            "sell_timestamp":str(datetime.datetime.now())
-        })
-    if float(sell_price)>buy_price:
-        data["winning_trades"]+=1
-    data["open_trades"]-=1
-    data["closed_trades"]+=1
-    data["profit"]=float(data["profit"])*((float(sell_price)*0.99925/buy_price*1.00075))
+    data = file_handler.update_sell(sell_price, buy_price)
     telegram.send_alert(data)
-    trades_file.seek(0)
-    json.dump(data,trades_file)
-    trades_file.close()
 
 def monitor(symbol,buy_price,ma):
 
@@ -134,15 +91,7 @@ def monitor(symbol,buy_price,ma):
         stop = ma
         profit = buy_price*((100+(ma_diff*PROFIT_FACTOR)))/100
     
-    trades_file = open("data.json","r+")
-    data = json.loads(trades_file.read())
-    data["trades"][0].update({
-            "stop_loss":float(stop),
-            "take_profit":float(profit),
-        })
-    trades_file.seek(0)
-    json.dump(data,trades_file)
-    trades_file.close()
+    file_handler.update_stop_profit(stop,profit)
 
     while True:
         try:
@@ -167,22 +116,8 @@ def buy(symbol,close,ma):
         return
     print(f"------ BUY {symbol}")
     IN_TRADE = True
-    trades_file = open("data.json","r+")
-    data = json.loads(trades_file.read())
-    new_data = {}
-    new_data.update({
-            "ticker":str(symbol),
-            "position_buy_price":float(price),
-            "position_type":"open",
-            "buy_timestamp":str(datetime.datetime.now()),
-            "ma":float(ma)
-        })
-    data["trades"].insert(0,new_data)
-    data["open_trades"]+=1
+    data = file_handler.update_buy(symbol,close,ma)
     telegram.send_alert(data)
-    trades_file.seek(0)
-    json.dump(data,trades_file)
-    trades_file.close()
 
     monitor(symbol,price,ma)
 
@@ -219,13 +154,14 @@ def scan():
     for count, ticker in enumerate(tickers):
         print("----- Checking tickers : " + str(count+1) + "/" + str(len(tickers)), end="\r")
         technicals = get_technicals(ticker)
-        if buy_condition(technicals):
-            symbol = technicals[0]
-            price = technicals[1]
-            ma = technicals[-1]
-            buy(symbol,price,ma)
-            SCANNING = False
-            return
+        if technicals:
+            if buy_condition(technicals):
+                symbol = technicals[0]
+                price = technicals[1]
+                ma = technicals[-1]
+                buy(symbol,price,ma)
+                SCANNING = False
+                return
     print("")
     print("---- No signal")
     SCANNING = False
@@ -233,23 +169,21 @@ def scan():
 
 if __name__ == "__main__":
     print("- Bot started")
-    trades_file = open("data.json","r")
-    data = json.loads(trades_file.read())
-    trades_file.close()
     print("-- Checking for open trades")
-    if data["open_trades"] == 1:
+
+    open_trade = file_handler.get_open_trade()
+    if open_trade:
         IN_TRADE = True
         print("--- Open trade found")
-        print("------ BUY {}".format(data["trades"][0]["ticker"]))
-        monitor(data["trades"][0]["ticker"],data["trades"][0]["position_buy_price"],data["trades"][0]["ma"])
+        print("------ BUY {}".format(open_trade[0]))
+        monitor(open_trade[0],open_trade[1],open_trade[2])
     else:
         print("--- No open trade found")
     
-
     print("-- Starting candle timer")
     while True:
         if not SCANNING and not IN_TRADE:
-            if int(time.time())%1800 == 0:
+            if int(time.time())%900 == 0:
                 print("")
                 print(f"--- New candle close")
                 x = threading.Thread(target=scan, daemon=True)
