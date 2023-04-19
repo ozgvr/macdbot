@@ -7,11 +7,9 @@ import talib
 import numpy as np
 from binance.client import Client
 from binance.enums import *
-from .config import DEBUG, API_KEY, API_SECRET
 
-if not DEBUG:
-    API_KEY = os.getenv("API_KEY")
-    API_SECRET = os.getenv("API_SECRET")
+from config import API_KEY, API_SECRET
+
 
 from utils import avg_price, perc_change, convert_precision, get_precision
 from strategy import *
