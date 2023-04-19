@@ -1,5 +1,4 @@
 import os
-import json
 import threading
 import time
 import file_handler
@@ -82,7 +81,7 @@ def sell(symbol,buy_price):
 
 def monitor(symbol,buy_price,ma):
 
-    stop, profit = sell_condition(buy_price, ma)
+    [stop, profit] = sell_condition(buy_price, ma)
     file_handler.update_stop_profit(stop,profit)
 
     while True:
